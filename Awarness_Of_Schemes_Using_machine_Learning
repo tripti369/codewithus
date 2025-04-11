@@ -1,0 +1,48 @@
+import pandas as pd
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelEncoder
+from sklearn.metrics import accuracy_score
+
+# Step 1: Load data
+# Try different encodings like 'latin-1' or 'cp1252'
+df = pd.read_csv("/content/Scheme_s.csv", encoding='latin-1')  # Or create from a list of dicts 
+
+# Step 2: Encode categorical variables
+le_region = LabelEncoder()
+le_education = LabelEncoder()
+le_scheme = LabelEncoder()
+
+df['Region'] = le_region.fit_transform(df['Region'])
+df['Education'] = le_education.fit_transform(df['Education'])
+df['Scheme'] = le_scheme.fit_transform(df['Scheme'])  # This is the label
+
+# **Step 3: Convert 'income' column to numeric, handling errors**
+df['income'] = pd.to_numeric(df['income'], errors='coerce') # Convert to numeric, invalid parsing will be set as NaN
+df['income'] = df['income'].fillna(0)  # Replace NaN with 0; you might want to use a more appropriate imputation strategy
+
+# Step 4: Define input and output
+X = df[['income', 'Region', 'Education']]  # Features
+y = df['Scheme']  # Target  
+
+# Step 5: Train/test split
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Step 6: Train model
+model = DecisionTreeClassifier()
+model.fit(X_train, y_train)
+
+# Step 7: Evaluate
+y_pred = model.predict(X_test)
+print("Accuracy:", accuracy_score(y_test, y_pred))
+
+# Input: income=130000, region="rural", education="high_school"
+test_input = pd.DataFrame([{
+    'income': 10500,  # Changed 'Income' to 'income'
+    'Region': le_region.transform(['rural'])[0],
+    'Education': le_education.transform(['no specific education'])[0]  # Added 'Education' feature
+}])
+
+pred = model.predict(test_input)
+pred_scheme = le_scheme.inverse_transform(pred)
+print("Predicted Scheme:", pred_scheme[0])
